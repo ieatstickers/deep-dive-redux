@@ -2,15 +2,13 @@
 import * as React from "react";
 import { CounterDataStore } from "../../data/CounterDataStore";
 import { ListDataStore } from "../../data/ListDataStore";
-import { Redux } from "../../redux/Redux";
 
 export interface DataStoreAppProps {}
 
 export interface DataStoreAppState
 {
   counterValue: number,
-  counterState: any,
-  listState: any,
+  list: Array<string>
 }
 
 export class DataStoreApp extends React.Component<DataStoreAppProps, DataStoreAppState>
@@ -21,31 +19,24 @@ export class DataStoreApp extends React.Component<DataStoreAppProps, DataStoreAp
   
     this.state = {
       counterValue: CounterDataStore.getValue(),
-      counterState: CounterDataStore.getState(),
-      listState: ListDataStore.getState()
+      list: ListDataStore.getList()
     }
   }
   
   
   public componentDidMount() {
     
-    CounterDataStore.subscribe((state) => {
-      this.setState({
-        counterState: state
-      })
-    })
-    
-    ListDataStore.subscribe((state) => {
-      this.setState({
-        listState: state
-      })
-    })
-    
     CounterDataStore.subscribeToValue((value) => {
       this.setState({
         counterValue: value
       })
-    })
+    }, this.state.counterValue)
+    
+    ListDataStore.subscribeToList((list) => {
+      this.setState({
+        list: list
+      })
+    }, this.state.list)
   }
   
   public render()
@@ -54,12 +45,16 @@ export class DataStoreApp extends React.Component<DataStoreAppProps, DataStoreAp
       <div>
         Counter Value: {this.state.counterValue}
       </div>
-      <pre>
-        {JSON.stringify(this.state.counterState, null, 2)}
-      </pre>
-      <pre>
-        {JSON.stringify(this.state.listState, null, 2)}
-      </pre>
+      <div>
+        List:
+        <ul>
+          {
+            this.state.list.map((item, key) => {
+              return <li key={key}>{item}</li>
+            })
+          }
+        </ul>
+      </div>
       <div>
         <button onClick={this.increment.bind(this)}>Increment</button>
         <button onClick={this.decrement.bind(this)}>Decrement</button>
@@ -73,21 +68,21 @@ export class DataStoreApp extends React.Component<DataStoreAppProps, DataStoreAp
   
   private increment()
   {
-    Redux.dispatch({ type: 'counter/incremented' })
+    CounterDataStore.increment();
   }
   
   private decrement()
   {
-    Redux.dispatch({ type: 'counter/decremented' })
+    CounterDataStore.decrement()
   }
   
   private addToList()
   {
-    Redux.dispatch({ type: 'list/add', data: "a new string"})
+    ListDataStore.addToList("a new string");
   }
   
   private removeFromList()
   {
-    Redux.dispatch({ type: 'list/remove'})
+    ListDataStore.removeLastItem();
   }
 }

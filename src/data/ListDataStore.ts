@@ -1,4 +1,8 @@
+import { Arrays } from "phusion/src/Core/Arrays/Arrays";
+import { Objects } from "phusion/src/Core/Objects/Objects";
+import { Unsubscribe } from "redux";
 import { DataStore } from "../redux/DataStore/DataStore";
+import { Redux } from "../redux/Redux";
 
 export class ListDataStore extends DataStore
 {
@@ -12,15 +16,56 @@ export class ListDataStore extends DataStore
     switch (action.type)
     {
       case 'list/add': {
-        state.list.push(action.data)
-        return state;
+        const newList = state.list.concat([action.data]);
+        return {
+          ...state,
+          list: newList
+        };
       }
       case 'list/remove': {
-        state.list.splice(state.list.length - 1, 1);
-        return state;
+        const list = Arrays.clone(state.list);
+        list.splice(state.list.length - 1, 1);
+        
+        return {
+          ...state,
+          list: list
+        }
       }
       default:
         return state;
     }
+  }
+  
+  public static getList(): Array<string>
+  {
+    return Objects.getByKeyPath('list', this.getState()) || [];
+  }
+  
+  public static subscribeToList(subscriber: (list: Array<string>) => void, currentValue: Array<string> = null): Unsubscribe
+  {
+    console.log('Listening for list changes', currentValue);
+    
+    return this.subscribe(() => {
+      const newValue = this.getList();
+      
+      console.log('ListDataStore.subscribeToList', newValue, currentValue);
+    
+      if (JSON.stringify(newValue) !== JSON.stringify(currentValue))
+      {
+        currentValue = newValue;
+      
+        subscriber(newValue);
+      }
+    })
+  }
+  
+  public static addToList(listItem: string)
+  {
+    Redux.dispatch({ type: 'list/add', data: listItem})
+  }
+  
+  public static removeLastItem()
+  {
+    Redux.dispatch({ type: 'list/remove'})
   }
 }
